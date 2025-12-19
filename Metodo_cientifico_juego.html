@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Detective Científico | La Ciencia del Cambio</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Georgia', serif;
+      background: linear-gradient(135deg, #1a1a1a 0%, #2b5a7a 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .game-container {
+      max-width: 800px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+
+    .game-header {
+      background: #2b5a7a;
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .game-header h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+    }
+
+    .game-header p {
+      font-size: 1.1em;
+      color: #d4c5a9;
+    }
+
+    .game-content {
+      padding: 40px;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .mystery-box {
+      background: #f5f1e8;
+      border-left: 4px solid #2b5a7a;
+      padding: 25px;
+      margin: 20px 0;
+      border-radius: 4px;
+    }
+
+    .mystery-box h3 {
+      color: #2b5a7a;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin: 30px 0;
+    }
+
+    .option-btn {
+      background: #f5f1e8;
+      border: 2px solid #e8dfc7;
+      padding: 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-align: left;
+      font-size: 1.05em;
+      font-family: 'Georgia', serif;
+    }
+
+    .option-btn:hover {
+      background: #2b5a7a;
+      color: white;
+      border-color: #2b5a7a;
+      transform: translateX(5px);
+    }
+
+    .option-btn.selected {
+      background: #2b5a7a;
+      color: white;
+      border-color: #1a3d52;
+    }
+
+    .option-btn.correct {
+      background: #27ae60;
+      color: white;
+      border-color: #229954;
+    }
+
+    .option-btn.incorrect {
+      background: #c0392b;
+      color: white;
+      border-color: #a93226;
+    }
+
+    .feedback {
+      background: #e8dfc7;
+      padding: 20px;
+      border-radius: 4px;
+      margin: 20px 0;
+      display: none;
+    }
+
+    .feedback.show {
+      display: block;
+      animation: fadeIn 0.5s;
+    }
+
+    .feedback.correct {
+      background: #d5f4e6;
+      border-left: 4px solid #27ae60;
+    }
+
+    .feedback.incorrect {
+      background: #fadbd8;
+      border-left: 4px solid #c0392b;
+    }
+
+    .btn {
+      background: #2b5a7a;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-family: 'Georgia', serif;
+      transition: all 0.3s;
+      margin: 10px 5px;
+    }
+
+    .btn:hover {
+      background: #1a3d52;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    .btn:disabled {
+      background: #999;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .progress {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+      padding: 15px;
+      background: #f5f1e8;
+      border-radius: 4px;
+    }
+
+    .progress-item {
+      text-align: center;
+      flex: 1;
+    }
+
+    .progress-item strong {
+      display: block;
+      color: #2b5a7a;
+      font-size: 1.5em;
+    }
+
+    .score-display {
+      text-align: center;
+      font-size: 3em;
+      color: #2b5a7a;
+      margin: 30px 0;
+      font-weight: bold;
+    }
+
+    .final-message {
+      text-align: center;
+      font-size: 1.3em;
+      color: #1a1a1a;
+      margin: 20px 0;
+    }
+
+    .badge {
+      text-align: center;
+      font-size: 5em;
+      margin: 20px 0;
+    }
+
+    @media (max-width: 768px) {
+      .game-header h1 {
+        font-size: 1.8em;
+      }
+
+      .game-content {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="game-container">
+    <div class="game-header">
+      <h1>🔍 Detective Científico</h1>
+      <p>Resuelve el misterio usando el método científico</p>
+    </div>
+
+    <div class="game-content">
+      
+      <!-- Pantalla de inicio -->
+      <div class="screen active" id="intro-screen">
+        <h2>Bienvenido, Detective</h2>
+        <div class="mystery-box">
+          <h3>Tu Misión</h3>
+          <p>
+            Un extraño fenómeno está ocurriendo en la oficina: cada día, las plantas junto 
+            a la ventana están verdes y saludables, pero las plantas en el escritorio del 
+            fondo se ven pálidas y débiles, a pesar de recibir el mismo cuidado.
+          </p>
+          <p style="margin-top: 15px;">
+            Tu trabajo es usar el método científico para descubrir qué está pasando. 
+            Deberás hacer observaciones, formular hipótesis, diseñar experimentos y 
+            llegar a una conclusión basada en evidencia.
+          </p>
+        </div>
+        <button class="btn" onclick="startGame()">Comenzar Investigación</button>
+      </div>
+
+      <!-- Paso 1: Observación -->
+      <div class="screen" id="observation-screen">
+        <div class="progress">
+          <div class="progress-item">
+            <strong>1/5</strong>
+            <span>Observación</span>
+          </div>
+        </div>
+
+        <h2>Paso 1: Observación Detallada</h2>
+        <div class="mystery-box">
+          <p>
+            Llegas temprano a la oficina y decides observar cuidadosamente las plantas. 
+            Notas varios detalles:
+          </p>
+          <ul style="margin-left: 25px; margin-top: 15px; line-height: 2;">
+            <li>Las plantas cerca de la ventana tienen hojas de color verde intenso</li>
+            <li>Las plantas del fondo tienen hojas amarillentas</li>
+            <li>Todas reciben la misma cantidad de agua</li>
+            <li>La temperatura es uniforme en toda la oficina</li>
+            <li>La ventana está orientada hacia el sur y recibe mucha luz natural</li>
+          </ul>
+        </div>
+
+        <h3 style="margin-top: 30px;">¿Cuál es la observación clave más relevante?</h3>
+        <div class="options">
+          <button class="option-btn" onclick="selectAnswer(1, 'a')">
+            A) Todas las plantas reciben la misma cantidad de agua
+          </button>
+          <button class="option-btn" onclick="selectAnswer(1, 'b')">
+            B) La ventana está orientada hacia el sur
+          </button>
+          <button class="option-btn" onclick="selectAnswer(1, 'c')">
+            C) Existe una diferencia en el color entre plantas cerca y lejos de la ventana
+          </button>
+          <button class="option-btn" onclick="selectAnswer(1, 'd')">
+            D) La temperatura es uniforme
+          </button>
+        </div>
+
+        <div class="feedback" id="feedback-1"></div>
+        <button class="btn" id="next-btn-1" style="display: none;" onclick="showScreen('question-screen')">Continuar</button>
+      </div>
+
+      <!-- Paso 2: Pregunta -->
+      <div class="screen" id="question-screen">
+        <div class="progress">
+          <div class="progress-item">
+            <strong>2/5</strong>
+            <span>Pregunta</span>
+          </div>
+        </div>
+
+        <h2>Paso 2: Formular la Pregunta</h2>
+        <div class="mystery-box">
+          <p>
+            Has observado que hay una diferencia clara entre las plantas. Ahora necesitas 
+            formular una pregunta científica que puedas investigar.
+          </p>
+        </div>
+
+        <h3 style="margin-top: 30px;">¿Cuál es la mejor pregunta científica?</h3>
+        <div class="options">
+          <button class="option-btn" onclick="selectAnswer(2, 'a')">
+            A) ¿Por qué algunas plantas son mejores que otras?
+          </button>
+          <button class="option-btn" onclick="selectAnswer(2, 'b')">
+            B) ¿La diferencia en la cantidad de luz afecta el color y salud de las plantas?
+          </button>
+          <button class="option-btn" onclick="selectAnswer(2, 'c')">
+            C) ¿Las plantas necesitan más agua?
+          </button>
+          <button class="option-btn" onclick="selectAnswer(2, 'd')">
+            D) ¿Cómo puedo hacer que todas las plantas sean verdes?
+          </button>
+        </div>
+
+        <div class="feedback" id="feedback-2"></div>
+        <button class="btn" id="next-btn-2" style="display: none;" onclick="showScreen('hypothesis-screen')">Continuar</button>
+      </div>
+
+      <!-- Paso 3: Hipótesis -->
+      <div class="screen" id="hypothesis-screen">
+        <div class="progress">
+          <div class="progress-item">
+            <strong>3/5</strong>
+            <span>Hipótesis</span>
+          </div>
+        </div>
+
+        <h2>Paso 3: Formular una Hipótesis</h2>
+        <div class="mystery-box">
+          <p>
+            Una hipótesis debe ser una explicación tentativa que puedas probar. 
+            Debe hacer una predicción específica sobre lo que esperas encontrar.
+          </p>
+        </div>
+
+        <h3 style="margin-top: 30px;">¿Cuál es la mejor hipótesis?</h3>
+        <div class="options">
+          <button class="option-btn" onclick="selectAnswer(3, 'a')">
+            A) Las plantas necesitan más cuidado
+          </button>
+          <button class="option-btn" onclick="selectAnswer(3, 'b')">
+            B) Si las plantas del fondo reciben más luz natural, entonces mejorarán su color y salud, similar a las plantas de la ventana
+          </button>
+          <button class="option-btn" onclick="selectAnswer(3, 'c')">
+            C) Todas las plantas son diferentes
+          </button>
+          <button class="option-btn" onclick="selectAnswer(3, 'd')">
+            D) La oficina tiene mala energía
+          </button>
+        </div>
+
+        <div class="feedback" id="feedback-3"></div>
+        <button class="btn" id="next-btn-3" style="display: none;" onclick="showScreen('experiment-screen')">Continuar</button>
+      </div>
+
+      <!-- Paso 4: Experimento -->
+      <div class="screen" id="experiment-screen">
+        <div class="progress">
+          <div class="progress-item">
+            <strong>4/5</strong>
+            <span>Experimentación</span>
+          </div>
+        </div>
+
+        <h2>Paso 4: Diseñar el Experimento</h2>
+        <div class="mystery-box">
+          <p>
+            Para probar tu hipótesis, necesitas diseñar un experimento que controle 
+            las variables y te permita obtener datos confiables.
+          </p>
+        </div>
+
+        <h3 style="margin-top: 30px;">¿Cuál es el mejor diseño experimental?</h3>
+        <div class="options">
+          <button class="option-btn" onclick="selectAnswer(4, 'a')">
+            A) Mover todas las plantas a la ventana y esperar
+          </button>
+          <button class="option-btn" onclick="selectAnswer(4, 'b')">
+            B) Comprar plantas nuevas para reemplazar las débiles
+          </button>
+          <button class="option-btn" onclick="selectAnswer(4, 'c')">
+            C) Dividir las plantas en dos grupos: mover la mitad de las plantas pálidas cerca de la ventana, manteniendo todo lo demás igual, y comparar su evolución durante 2 semanas
+          </button>
+          <button class="option-btn" onclick="selectAnswer(4, 'd')">
+            D) Regar más las plantas del fondo
+          </button>
+        </div>
+
+        <div class="feedback" id="feedback-4"></div>
+        <button class="btn" id="next-btn-4" style="display: none;" onclick="showScreen('conclusion-screen')">Continuar</button>
+      </div>
+
+      <!-- Paso 5: Conclusión -->
+      <div class="screen" id="conclusion-screen">
+        <div class="progress">
+          <div class="progress-item">
+            <strong>5/5</strong>
+            <span>Conclusión</span>
+          </div>
+        </div>
+
+        <h2>Paso 5: Analizar y Concluir</h2>
+        <div class="mystery-box">
+          <h3>Resultados después de 2 semanas:</h3>
+          <ul style="margin-left: 25px; margin-top: 15px; line-height: 2;">
+            <li>Las plantas movidas cerca de la ventana recuperaron su color verde</li>
+            <li>Las plantas que permanecieron en el fondo siguen pálidas</li>
+            <li>Todas recibieron el mismo agua y cuidado</li>
+          </ul>
+        </div>
+
+        <h3 style="margin-top: 30px;">¿Cuál es la mejor conclusión científica?</h3>
+        <div class="options">
+          <button class="option-btn" onclick="selectAnswer(5, 'a')">
+            A) Las plantas de la ventana son más fuertes genéticamente
+          </button>
+          <button class="option-btn" onclick="selectAnswer(5, 'b')">
+            B) La evidencia apoya la hipótesis: la cantidad de luz natural afecta directamente la salud y color de las plantas. Esto sugiere que la fotosíntesis requiere luz adecuada
+          </button>
+          <button class="option-btn" onclick="selectAnswer(5, 'c')">
+            C) Necesitamos más agua para todas las plantas
+          </button>
+          <button class="option-btn" onclick="selectAnswer(5, 'd')">
+            D) Fue solo suerte que algunas plantas mejoraron
+          </button>
+        </div>
+
+        <div class="feedback" id="feedback-5"></div>
+        <button class="btn" id="next-btn-5" style="display: none;" onclick="showResults()">Ver Resultados</button>
+      </div>
+
+      <!-- Pantalla de resultados -->
+      <div class="screen" id="results-screen">
+        <h2>¡Investigación Completa!</h2>
+        
+        <div class="score-display" id="score-display"></div>
+        <div class="badge" id="badge"></div>
+        <div class="final-message" id="final-message"></div>
+
+        <div class="mystery-box">
+          <h3>Lo que aprendiste:</h3>
+          <p>
+            Has aplicado el método científico completo: observaste un fenómeno, formulaste 
+            una pregunta específica, creaste una hipótesis comprobable, diseñaste un 
+            experimento controlado, y llegaste a una conclusión basada en evidencia.
+          </p>
+          <p style="margin-top: 15px;">
+            Este mismo proceso se usa en investigaciones reales, desde descubrir nuevos 
+            medicamentos hasta entender el cambio climático. ¡Ahora sabes pensar como un científico!
+          </p>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+          <button class="btn" onclick="location.reload()">Jugar de Nuevo</button>
+          <button class="btn" onclick="window.location.href='metodo-cientifico.html'">Leer el Artículo</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    let score = 0;
+    const correctAnswers = {
+      1: 'c',
+      2: 'b',
+      3: 'b',
+      4: 'c',
+      5: 'b'
+    };
+
+    const feedbacks = {
+      1: {
+        correct: "¡Excelente! La observación clave es notar la diferencia sistemática entre las plantas. Eso es lo que nos lleva a investigar más.",
+        incorrect: "La observación más importante es notar la diferencia entre las plantas. Eso es lo que realmente nos hace preguntarnos qué está pasando."
+      },
+      2: {
+        correct: "¡Perfecto! Una buena pregunta científica es específica, medible y se enfoca en una relación causa-efecto que puedes investigar.",
+        incorrect: "Una pregunta científica debe ser específica y comprobable. Debe enfocarse en qué factor específico podría estar causando la diferencia."
+      },
+      3: {
+        correct: "¡Muy bien! Esta hipótesis hace una predicción clara y comprobable. Especifica qué cambio esperas ver si cambias una variable.",
+        incorrect: "Una buena hipótesis debe hacer una predicción específica sobre qué pasará si cambias algo. Debe ser comprobable mediante un experimento."
+      },
+      4: {
+        correct: "¡Excelente diseño! Un buen experimento cambia solo una variable (la luz) y mantiene todo lo demás constante. Además incluye un grupo de control.",
+        incorrect: "Un buen experimento debe cambiar solo una variable a la vez y tener un grupo de control para comparar. Así puedes estar seguro de qué causó el cambio."
+      },
+      5: {
+        correct: "¡Perfecto! Una conclusión científica interpreta los datos objetivamente y conecta los resultados con la hipótesis original. Reconoce lo que la evidencia muestra.",
+        incorrect: "Una buena conclusión debe basarse en la evidencia recolectada y explicar qué apoyan los datos. Debe conectar los resultados con tu hipótesis original."
+      }
+    };
+
+    function startGame() {
+      score = 0;
+      showScreen('observation-screen');
+    }
+
+    function showScreen(screenId) {
+      document.querySelectorAll('.screen').forEach(screen => {
+        screen.classList.remove('active');
+      });
+      document.getElementById(screenId).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    function selectAnswer(step, answer) {
+      const buttons = document.querySelectorAll(`#${getCurrentScreenId(step)} .option-btn`);
+      buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+      });
+
+      const isCorrect = answer === correctAnswers[step];
+      if (isCorrect) score++;
+
+      event.target.classList.add(isCorrect ? 'correct' : 'incorrect');
+      event.target.style.opacity = '1';
+
+      const feedback = document.getElementById(`feedback-${step}`);
+      feedback.className = `feedback show ${isCorrect ? 'correct' : 'incorrect'}`;
+      feedback.innerHTML = `
+        <strong>${isCorrect ? '✓ ¡Correcto!' : '✗ No exactamente'}</strong>
+        <p style="margin-top: 10px;">${isCorrect ? feedbacks[step].correct : feedbacks[step].incorrect}</p>
+      `;
+
+      document.getElementById(`next-btn-${step}`).style.display = 'inline-block';
+    }
+
+    function getCurrentScreenId(step) {
+      const screens = ['observation-screen', 'question-screen', 'hypothesis-screen', 'experiment-screen', 'conclusion-screen'];
+      return screens[step - 1];
+    }
+
+    function showResults() {
+      showScreen('results-screen');
+      
+      document.getElementById('score-display').textContent = `${score}/5`;
+      
+      let badge, message;
+      if (score === 5) {
+        badge = '🏆';
+        message = '¡Científico Experto! Dominaste completamente el método científico.';
+      } else if (score >= 3) {
+        badge = '🔬';
+        message = '¡Buen Detective! Tienes una comprensión sólida del método científico.';
+      } else {
+        badge = '🔍';
+        message = 'Detective en Entrenamiento. ¡Sigue practicando! El método científico se aprende con la práctica.';
+      }
+      
+      document.getElementById('badge').textContent = badge;
+      document.getElementById('final-message').textContent = message;
+    }
+  </script>
+
+</body>
+</html>
